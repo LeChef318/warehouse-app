@@ -3,13 +3,12 @@ package com.warehouse.controller;
 import com.warehouse.dto.StockDTO;
 import com.warehouse.dto.StockUpdateDTO;
 import com.warehouse.service.StockService;
+import com.warehouse.util.SecurityUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,10 +19,12 @@ import java.util.List;
 public class StockController {
 
     private final StockService stockService;
+    private final SecurityUtils securityUtils;
 
     @Autowired
-    public StockController(StockService stockService) {
+    public StockController(StockService stockService, SecurityUtils securityUtils) {
         this.stockService = stockService;
+        this.securityUtils = securityUtils;
     }
 
     @GetMapping
@@ -54,10 +55,7 @@ public class StockController {
     @PreAuthorize("hasRole('MANAGER')")
     @Operation(summary = "Update stock", description = "Updates the stock of a product in a warehouse (Manager only)")
     public ResponseEntity<StockDTO> updateStock(@RequestBody StockUpdateDTO stockUpdateDTO) {
-        // In a real application, you would get the user ID from the authentication
-        // For simplicity, we're using a hardcoded user ID here
-        Long userId = 1L; // This should be retrieved from the authenticated user
-        
+        Long userId = securityUtils.getCurrentUserId();
         return ResponseEntity.ok(stockService.updateStock(stockUpdateDTO, userId));
     }
 
@@ -65,10 +63,7 @@ public class StockController {
     @PreAuthorize("hasRole('MANAGER')")
     @Operation(summary = "Transfer stock", description = "Transfers stock from one warehouse to another (Manager only)")
     public ResponseEntity<Void> transferStock(@RequestBody StockUpdateDTO stockUpdateDTO) {
-        // In a real application, you would get the user ID from the authentication
-        // For simplicity, we're using a hardcoded user ID here
-        Long userId = 1L; // This should be retrieved from the authenticated user
-        
+        Long userId = securityUtils.getCurrentUserId();
         stockService.transferStock(stockUpdateDTO, userId);
         return ResponseEntity.ok().build();
     }
