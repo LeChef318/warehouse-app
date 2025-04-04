@@ -10,6 +10,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtGra
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -22,33 +23,72 @@ public class JwtAuthConverter implements Converter<Jwt, AbstractAuthenticationTo
 
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
-        Collection<GrantedAuthority> authorities = Stream.concat(
-                jwtGrantedAuthoritiesConverter.convert(jwt).stream(),
-                extractResourceRoles(jwt).stream()
-        ).collect(Collectors.toSet());
+        try {
+            Collection<GrantedAuthority> authorities = Stream.concat(
+                    jwtGrantedAuthoritiesConverter.convert(jwt).stream(),
+                    extractRoles(jwt).stream()
+            ).collect(Collectors.toSet());
 
-        return new JwtAuthenticationToken(jwt, authorities, jwt.getClaimAsString("preferred_username"));
+            return new JwtAuthenticationToken(jwt, authorities, jwt.getClaimAsString("preferred_username"));
+        } catch (Exception e) {
+            // Log the error but don't throw it
+            System.err.println("Error converting JWT: " + e.getMessage());
+            // Return a token with minimal authorities
+            return new JwtAuthenticationToken(jwt, Collections.emptyList(), jwt.getSubject());
+        }
     }
 
-    private Collection<? extends GrantedAuthority> extractResourceRoles(Jwt jwt) {
-        Map<String, Object> resourceAccess = jwt.getClaimAsMap("resource_access");
-        if (resourceAccess == null) {
-            return Set.of();
-        }
+    private Collection<? extends GrantedAuthority> extractRoles(Jwt jwt) {
+        Set<GrantedAuthority> authorities = extractRealmRoles(jwt);
+        authorities.addAll(extractResourceRoles(jwt));
+        return authorities;
+    }
 
-        Map<String, Object> resource = (Map<String, Object>) resourceAccess.get("warehouse-app");
-        if (resource == null) {
-            return Set.of();
-        }
+    private Set<GrantedAuthority> extractRealmRoles(Jwt jwt) {
+        try {
+            Map<String, Object> realmAccess = jwt.getClaimAsMap("realm_access");
+            if (realmAccess == null || realmAccess.isEmpty()) {
+                return Collections.emptySet();
+            }
 
-        Collection<String> roles = (Collection<String>) resource.get("roles");
-        if (roles == null) {
-            return Set.of();
-        }
+            Collection<String> roles = (Collection<String>) realmAccess.get("roles");
+            if (roles == null || roles.isEmpty()) {
+                return Collections.emptySet();
+            }
 
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                .collect(Collectors.toSet());
+            return roles.stream()
+                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            System.err.println("Error extracting realm roles: " + e.getMessage());
+            return Collections.emptySet();
+        }
+    }
+
+    private Set<GrantedAuthority> extractResourceRoles(Jwt jwt) {
+        try {
+            Map<String, Object> resourceAccess = jwt.getClaimAsMap("resource_access");
+            if (resourceAccess == null || resourceAccess.isEmpty()) {
+                return Collections.emptySet();
+            }
+
+            Map<String, Object> resource = (Map<String, Object>) resourceAccess.get("warehouse-app");
+            if (resource == null || resource.isEmpty()) {
+                return Collections.emptySet();
+            }
+
+            Collection<String> roles = (Collection<String>) resource.get("roles");
+            if (roles == null || roles.isEmpty()) {
+                return Collections.emptySet();
+            }
+
+            return roles.stream()
+                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                    .collect(Collectors.toSet());
+        } catch (Exception e) {
+            System.err.println("Error extracting resource roles: " + e.getMessage());
+            return Collections.emptySet();
+        }
     }
 }
 

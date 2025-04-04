@@ -3,7 +3,6 @@ package com.warehouse.config;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
@@ -19,8 +18,7 @@ public class SwaggerConfig {
                 .info(new Info()
                         .title("Warehouse Management API")
                         .version("1.0")
-                        .description("API for managing warehouse inventory")
-                        .license(new License().name("Apache 2.0").url("http://springdoc.org")))
+                        .description("API for managing warehouse inventory"))
                 .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
                 .components(new Components()
                         .addSecuritySchemes(securitySchemeName,
