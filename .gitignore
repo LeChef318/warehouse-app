@@ -36,3 +36,55 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Maven Wrapper ###
+mvnw
+mvnw.cmd
+
+### Logs ###
+logs/
+*.log
+
+### Compiled files ###
+*.class
+
+### Packaged files ###
+*.jar
+*.war
+*.ear
+
+### Vim swap files ###
+*.swp
+*.swo
+
+### Backup files ###
+*.bak
+*.tmp
+
+### Temporary files ###
+*~
+
+### Gradle Wrapper ###
+gradlew
+gradlew.bat
+
+### OS generated files ###
+.DS_Store*
+ehthumbs.db
+Icon?
+Thumbs.db
+
+# Local configuration file
+# IDEs such as IntelliJ IDEA might create this file automatically
+# It is recommended to add this to .gitignore to avoid conflicts
+.idea/misc.xml
+.idea/vcs.xml
+.idea/workspace.xml
+.idea/dictionaries/
+.idea/gradle.xml
+.idea/encodings.xml
+.idea/recentProjects.xml
+.idea/assetWizardSettings.xml
+
+# Local Gradle configuration file
+.gradle/
