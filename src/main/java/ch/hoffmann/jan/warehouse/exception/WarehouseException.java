@@ -122,4 +122,14 @@ public class WarehouseException extends RuntimeException {
                     warehouseName, stockCount));
         }
     }
+
+    /**
+     * Exception thrown when a product has stock and cannot be deleted.
+     */
+    public static class ProductInUseException extends WarehouseException {
+        public ProductInUseException(String productName, int stockCount) {
+            super(String.format("Cannot delete product '%s' because it is used in %d stock entries",
+                    productName, stockCount));
+        }
+    }
 }

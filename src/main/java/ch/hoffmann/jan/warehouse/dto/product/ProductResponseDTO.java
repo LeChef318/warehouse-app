@@ -1,21 +1,22 @@
-package ch.hoffmann.jan.warehouse.dto;
+package ch.hoffmann.jan.warehouse.dto.product;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-public class ProductDTO {
+public class ProductResponseDTO {
     private Long id;
     private String name;
     private String description;
     private BigDecimal price;
     private Long categoryId;
     private String categoryName;
-    private List<StockDTO> stocks;
+    private List<ProductStockDTO> stocks;
 
-    public ProductDTO() {
+    // Constructors
+    public ProductResponseDTO() {
     }
 
-    public ProductDTO(Long id, String name, String description, BigDecimal price, Long categoryId, String categoryName) {
+    public ProductResponseDTO(Long id, String name, String description, BigDecimal price, Long categoryId, String categoryName) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -24,6 +25,7 @@ public class ProductDTO {
         this.categoryName = categoryName;
     }
 
+    // Getters and setters
     public Long getId() {
         return id;
     }
@@ -72,12 +74,24 @@ public class ProductDTO {
         this.categoryName = categoryName;
     }
 
-    public List<StockDTO> getStocks() {
+    public List<ProductStockDTO> getStocks() {
         return stocks;
     }
 
-    public void setStocks(List<StockDTO> stocks) {
+    public void setStocks(List<ProductStockDTO> stocks) {
         this.stocks = stocks;
     }
-}
 
+    @Override
+    public String toString() {
+        return "ProductResponseDTO{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + (description != null ? description.substring(0, Math.min(description.length(), 20)) + "..." : null) + '\'' +
+                ", price=" + price +
+                ", categoryId=" + categoryId +
+                ", categoryName='" + categoryName + '\'' +
+                ", stockCount=" + (stocks != null ? stocks.size() : 0) +
+                '}';
+    }
+}

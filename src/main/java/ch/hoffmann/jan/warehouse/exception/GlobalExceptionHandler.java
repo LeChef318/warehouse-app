@@ -291,4 +291,23 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
+
+    /**
+     * Handle product in use exceptions
+     */
+    @ExceptionHandler(WarehouseException.ProductInUseException.class)
+    public ResponseEntity<Object> handleProductInUseException(
+            WarehouseException.ProductInUseException ex, WebRequest request) {
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.CONFLICT.value());
+        body.put("error", "Product In Use");
+        body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        logger.warn("Product in use: {}", ex.getMessage());
+
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
 }
