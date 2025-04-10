@@ -367,4 +367,23 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
+
+    /**
+     * Handle invalid audit action exceptions
+     */
+    @ExceptionHandler(WarehouseException.InvalidAuditActionException.class)
+    public ResponseEntity<Object> handleInvalidAuditActionException(
+            WarehouseException.InvalidAuditActionException ex, WebRequest request) {
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Invalid Audit Action");
+        body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        logger.warn("Invalid audit action: {}", ex.getMessage());
+
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
 }

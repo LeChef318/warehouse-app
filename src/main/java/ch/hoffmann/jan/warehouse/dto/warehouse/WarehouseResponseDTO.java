@@ -1,6 +1,5 @@
 package ch.hoffmann.jan.warehouse.dto.warehouse;
 
-import ch.hoffmann.jan.warehouse.dto.StockDTO;
 import java.util.List;
 
 public class WarehouseResponseDTO {

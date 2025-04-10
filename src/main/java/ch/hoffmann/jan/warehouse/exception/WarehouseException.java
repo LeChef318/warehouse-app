@@ -162,4 +162,13 @@ public class WarehouseException extends RuntimeException {
                     warehouseName));
         }
     }
+
+    /**
+     * Exception thrown when an invalid audit action is provided.
+     */
+    public static class InvalidAuditActionException extends WarehouseException {
+        public InvalidAuditActionException(String action) {
+            super(String.format("Invalid audit action: '%s'. Valid actions are: ADD, REMOVE, TRANSFER", action));
+        }
+    }
 }
