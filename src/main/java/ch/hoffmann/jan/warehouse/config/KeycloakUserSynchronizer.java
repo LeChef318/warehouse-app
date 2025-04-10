@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -81,6 +82,20 @@ public class KeycloakUserSynchronizer implements ApplicationRunner {
                         localUser.setUsername(username);
                     }
 
+                    // Update Firstname if it changed in Keycloak
+                    if (!Objects.equals(localUser.getFirstname(), keycloakUser.getFirstName())) {
+                        logger.info("Updating Firstname for user {}: {} -> {}",
+                                keycloakId, localUser.getFirstname(), keycloakUser.getFirstName());
+                        localUser.setFirstname(keycloakUser.getFirstName());
+                    }
+
+                    // Update Lastname if it changed in Keycloak
+                    if (!Objects.equals(localUser.getLastname(), keycloakUser.getLastName())) {
+                        logger.info("Updating Lastname for user {}: {} -> {}",
+                                keycloakId, localUser.getLastname(), keycloakUser.getLastName());
+                        localUser.setLastname(keycloakUser.getLastName());
+                    }
+
                     // Ensure user is marked as active
                     if (!localUser.isActive()) {
                         logger.info("Activating user: {}", username);
@@ -117,7 +132,7 @@ public class KeycloakUserSynchronizer implements ApplicationRunner {
             for (User localUser : localUsers) {
                 String localKeycloakId = localUser.getKeycloakId();
 
-                // Skip users without a Keycloak ID (might be legacy users)
+                // Skip users without a Keycloak ID
                 if (localKeycloakId == null) {
                     continue;
                 }

@@ -25,6 +25,12 @@ public class KeycloakConfig {
     @Value("${keycloak.client-secret}")
     private String clientSecret;
 
+    @Value("${keycloak.admin-username}")
+    private String adminUsername;
+
+    @Value("${keycloak.admin-password}")
+    private String adminPassword;
+
     @Bean
     public Keycloak keycloak() {
         logger.info("Initializing Keycloak client with server URL: {}", serverUrl);
@@ -34,8 +40,8 @@ public class KeycloakConfig {
                     .serverUrl(serverUrl)
                     .realm("master")
                     .clientId("admin-cli")
-                    .username("admin")
-                    .password("admin")
+                    .username(adminUsername)
+                    .password(adminPassword)
                     .build();
 
             // Test the connection
@@ -49,4 +55,3 @@ public class KeycloakConfig {
         }
     }
 }
-

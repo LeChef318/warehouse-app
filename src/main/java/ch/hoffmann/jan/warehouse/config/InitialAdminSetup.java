@@ -145,8 +145,6 @@ public class InitialAdminSetup implements ApplicationRunner {
                 logger.info("Admin user created in Keycloak with ID: {}", keycloakId);
             }
 
-            // At this point, we have a valid Keycloak user with ID and manager role
-
             // Create admin in local database
             try {
                 User adminUser = new User();
