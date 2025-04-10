@@ -1,19 +1,21 @@
-package ch.hoffmann.jan.warehouse.dto;
+package ch.hoffmann.jan.warehouse.dto.category;
 
-public class CategoryDTO {
+public class CategoryResponseDTO {
     private Long id;
     private String name;
     private int productCount;
 
-    public CategoryDTO() {
+    // Constructors
+    public CategoryResponseDTO() {
     }
 
-    public CategoryDTO(Long id, String name, int productCount) {
+    public CategoryResponseDTO(Long id, String name, int productCount) {
         this.id = id;
         this.name = name;
         this.productCount = productCount;
     }
 
+    // Getters and setters
     public Long getId() {
         return id;
     }
@@ -37,5 +39,13 @@ public class CategoryDTO {
     public void setProductCount(int productCount) {
         this.productCount = productCount;
     }
-}
 
+    @Override
+    public String toString() {
+        return "CategoryResponseDTO{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", productCount=" + productCount +
+                '}';
+    }
+}

@@ -8,6 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.context.request.ServletWebRequest;
 import org.springframework.web.context.request.WebRequest;
 
 import java.time.LocalDateTime;
@@ -39,6 +40,7 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "Validation Error");
         body.put("details", errors);
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
 
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
     }
@@ -55,6 +57,7 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.CONFLICT.value());
         body.put("error", "Username Conflict");
         body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
 
         logger.warn("Username conflict: {}", ex.getMessage());
 
@@ -73,6 +76,7 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.BAD_GATEWAY.value());
         body.put("error", "External Service Error");
         body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
 
         logger.error("Keycloak operation failed: {}", ex.getMessage(), ex);
 
@@ -91,6 +95,7 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "Invalid Operation");
         body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
 
         logger.warn("Invalid role transition: {}", ex.getMessage());
 
@@ -109,6 +114,7 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.FORBIDDEN.value());
         body.put("error", "User Inactive");
         body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
 
         logger.warn("Operation attempted on inactive user: {}", ex.getMessage());
 
@@ -127,6 +133,7 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.FORBIDDEN.value());
         body.put("error", "Access Denied");
         body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
 
         logger.warn("Insufficient permissions: {}", ex.getMessage());
 
@@ -145,6 +152,7 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.NOT_FOUND.value());
         body.put("error", "Resource Not Found");
         body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
 
         logger.info("Resource not found: {}", ex.getMessage());
 
@@ -163,6 +171,7 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "Validation Error");
         body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
 
         logger.info("Validation error: {}", ex.getMessage());
 
@@ -181,10 +190,49 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         body.put("error", "Synchronization Error");
         body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
 
         logger.error("Synchronization error: {}", ex.getMessage(), ex);
 
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * Handle duplicate resource exceptions
+     */
+    @ExceptionHandler(WarehouseException.DuplicateResourceException.class)
+    public ResponseEntity<Object> handleDuplicateResourceException(
+            WarehouseException.DuplicateResourceException ex, WebRequest request) {
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.CONFLICT.value());
+        body.put("error", "Resource Conflict");
+        body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        logger.warn("Resource conflict: {}", ex.getMessage());
+
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
+
+    /**
+     * Handle category in use exceptions
+     */
+    @ExceptionHandler(WarehouseException.CategoryInUseException.class)
+    public ResponseEntity<Object> handleCategoryInUseException(
+            WarehouseException.CategoryInUseException ex, WebRequest request) {
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.CONFLICT.value());
+        body.put("error", "Category In Use");
+        body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        logger.warn("Category in use: {}", ex.getMessage());
+
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 
     /**
@@ -199,6 +247,7 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         body.put("error", "Application Error");
         body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
 
         logger.error("Unhandled warehouse exception: {}", ex.getMessage(), ex);
 
@@ -217,6 +266,7 @@ public class GlobalExceptionHandler {
         body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         body.put("error", "Server Error");
         body.put("message", "An unexpected error occurred");
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
 
         logger.error("Unhandled exception: {}", ex.getMessage(), ex);
 

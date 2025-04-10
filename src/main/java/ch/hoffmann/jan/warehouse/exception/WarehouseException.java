@@ -93,4 +93,23 @@ public class WarehouseException extends RuntimeException {
             super(message, cause);
         }
     }
+
+    /**
+     * Exception thrown when a resource already exists.
+     */
+    public static class DuplicateResourceException extends WarehouseException {
+        public DuplicateResourceException(String resourceName, String fieldName, Object fieldValue) {
+            super(String.format("%s with %s '%s' already exists", resourceName, fieldName, fieldValue));
+        }
+    }
+
+    /**
+     * Exception thrown when a category is in use and cannot be deleted.
+     */
+    public static class CategoryInUseException extends WarehouseException {
+        public CategoryInUseException(String categoryName, int productCount) {
+            super(String.format("Cannot delete category '%s' because it contains %d product(s)",
+                    categoryName, productCount));
+        }
+    }
 }

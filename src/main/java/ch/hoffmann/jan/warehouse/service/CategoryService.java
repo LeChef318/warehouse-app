@@ -1,13 +1,16 @@
 package ch.hoffmann.jan.warehouse.service;
 
-import ch.hoffmann.jan.warehouse.dto.CategoryDTO;
-import ch.hoffmann.jan.warehouse.exception.ResourceNotFoundException;
+import ch.hoffmann.jan.warehouse.dto.category.CategoryCreateRequestDTO;
+import ch.hoffmann.jan.warehouse.dto.category.CategoryResponseDTO;
+import ch.hoffmann.jan.warehouse.exception.WarehouseException;
 import ch.hoffmann.jan.warehouse.model.Category;
 import ch.hoffmann.jan.warehouse.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,52 +23,77 @@ public class CategoryService {
         this.categoryRepository = categoryRepository;
     }
 
-    public List<CategoryDTO> getAllCategories() {
+    @Transactional(readOnly = true)
+    public List<CategoryResponseDTO> getAllCategories() {
         return categoryRepository.findAll().stream()
-                .map(this::convertToDTO)
+                .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    public CategoryDTO getCategoryById(Long id) {
+    @Transactional(readOnly = true)
+    public CategoryResponseDTO getCategoryById(Long id) {
         return categoryRepository.findById(id)
-                .map(this::convertToDTO)
-                .orElseThrow(() -> new ResourceNotFoundException("Category", "id", id));
+                .map(this::convertToResponseDTO)
+                .orElseThrow(() -> new WarehouseException.ResourceNotFoundException("Category", "id", id));
     }
 
-    public CategoryDTO createCategory(CategoryDTO categoryDTO) {
-        Category category = new Category();
-        category.setName(categoryDTO.getName());
-        Category savedCategory = categoryRepository.save(category);
-        return convertToDTO(savedCategory);
-    }
-
-    public CategoryDTO updateCategory(Long id, Category categoryDetails) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category", "id", id));
-        
-        category.setName(categoryDetails.getName());
-        
-        Category updatedCategory = categoryRepository.save(category);
-        return convertToDTO(updatedCategory);
-    }
-
-    public void deleteCategory(Long id) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Category", "id", id));
-        
-        if (category.getProducts() != null && !category.getProducts().isEmpty()) {
-            throw new RuntimeException("Cannot delete category with associated products");
+    @Transactional
+    public CategoryResponseDTO createCategory(CategoryCreateRequestDTO createRequest) {
+        // Check if category with the same name already exists
+        if (categoryRepository.existsByName(createRequest.getName())) {
+            throw new WarehouseException.DuplicateResourceException("Category", "name", createRequest.getName());
         }
-        
+
+        // Create and save the new category
+        Category category = new Category();
+        category.setName(createRequest.getName());
+
+        Category savedCategory = categoryRepository.save(category);
+        return convertToResponseDTO(savedCategory);
+    }
+
+    @Transactional
+    public CategoryResponseDTO updateCategory(Long id, CategoryCreateRequestDTO updateRequest) {
+        // Find the category to update
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new WarehouseException.ResourceNotFoundException("Category", "id", id));
+
+        if (!Objects.equals(category.getName(), updateRequest.getName())) {
+            // Check if another category with the new name already exists
+            if (categoryRepository.existsByName(updateRequest.getName())) {
+                throw new WarehouseException.DuplicateResourceException("Category", "name", updateRequest.getName());
+            }
+
+            category.setName(updateRequest.getName());
+        }
+
+        Category updatedCategory = categoryRepository.save(category);
+        return convertToResponseDTO(updatedCategory);
+    }
+
+    @Transactional
+    public void deleteCategory(Long id) {
+        // Find the category to delete
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new WarehouseException.ResourceNotFoundException("Category", "id", id));
+
+        // Check if the category has associated products
+        if (category.getProducts() != null && !category.getProducts().isEmpty()) {
+            throw new WarehouseException.CategoryInUseException(category.getName(), category.getProducts().size());
+        }
+
+        // Delete the category
         categoryRepository.delete(category);
     }
 
-    private CategoryDTO convertToDTO(Category category) {
-        CategoryDTO dto = new CategoryDTO();
+    /**
+     * Converts a Category entity to a CategoryResponseDTO
+     */
+    private CategoryResponseDTO convertToResponseDTO(Category category) {
+        CategoryResponseDTO dto = new CategoryResponseDTO();
         dto.setId(category.getId());
         dto.setName(category.getName());
         dto.setProductCount(category.getProducts() != null ? category.getProducts().size() : 0);
         return dto;
     }
 }
-
