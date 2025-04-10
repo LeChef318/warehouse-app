@@ -310,4 +310,61 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
+
+    /**
+     * Handle insufficient stock exceptions
+     */
+    @ExceptionHandler(WarehouseException.InsufficientStockException.class)
+    public ResponseEntity<Object> handleInsufficientStockException(
+            WarehouseException.InsufficientStockException ex, WebRequest request) {
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.CONFLICT.value());
+        body.put("error", "Insufficient Stock");
+        body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        logger.warn("Insufficient stock: {}", ex.getMessage());
+
+        return new ResponseEntity<>(body, HttpStatus.CONFLICT);
+    }
+
+    /**
+     * Handle stock not found exceptions
+     */
+    @ExceptionHandler(WarehouseException.StockNotFoundException.class)
+    public ResponseEntity<Object> handleStockNotFoundException(
+            WarehouseException.StockNotFoundException ex, WebRequest request) {
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.NOT_FOUND.value());
+        body.put("error", "Stock Not Found");
+        body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        logger.warn("Stock not found: {}", ex.getMessage());
+
+        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+
+    /**
+     * Handle same warehouse transfer exceptions
+     */
+    @ExceptionHandler(WarehouseException.SameWarehouseTransferException.class)
+    public ResponseEntity<Object> handleSameWarehouseTransferException(
+            WarehouseException.SameWarehouseTransferException ex, WebRequest request) {
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Invalid Transfer");
+        body.put("message", ex.getMessage());
+        body.put("path", ((ServletWebRequest) request).getRequest().getRequestURI());
+
+        logger.warn("Same warehouse transfer attempt: {}", ex.getMessage());
+
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
 }

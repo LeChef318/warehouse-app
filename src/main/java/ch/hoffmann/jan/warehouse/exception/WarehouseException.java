@@ -132,4 +132,34 @@ public class WarehouseException extends RuntimeException {
                     productName, stockCount));
         }
     }
+
+    /**
+     * Exception thrown when there is not enough stock available for an operation.
+     */
+    public static class InsufficientStockException extends WarehouseException {
+        public InsufficientStockException(String productName, String warehouseName, int requested, int available) {
+            super(String.format("Not enough stock available for product '%s' in warehouse '%s'. Requested: %d, Available: %d",
+                    productName, warehouseName, requested, available));
+        }
+    }
+
+    /**
+     * Exception thrown when trying to remove stock from a non-existent inventory.
+     */
+    public static class StockNotFoundException extends WarehouseException {
+        public StockNotFoundException(String productName, String warehouseName) {
+            super(String.format("No stock found for product '%s' in warehouse '%s'",
+                    productName, warehouseName));
+        }
+    }
+
+    /**
+     * Exception thrown when trying to transfer stock to the same warehouse.
+     */
+    public static class SameWarehouseTransferException extends WarehouseException {
+        public SameWarehouseTransferException(String warehouseName) {
+            super(String.format("Cannot transfer stock to the same warehouse: '%s'",
+                    warehouseName));
+        }
+    }
 }
