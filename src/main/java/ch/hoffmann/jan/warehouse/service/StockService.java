@@ -10,6 +10,7 @@ import ch.hoffmann.jan.warehouse.model.Stock;
 import ch.hoffmann.jan.warehouse.model.Warehouse;
 import ch.hoffmann.jan.warehouse.repository.ProductRepository;
 import ch.hoffmann.jan.warehouse.repository.StockRepository;
+import ch.hoffmann.jan.warehouse.repository.UserRepository;
 import ch.hoffmann.jan.warehouse.repository.WarehouseRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,15 +29,17 @@ public class StockService {
     private final StockRepository stockRepository;
     private final ProductRepository productRepository;
     private final WarehouseRepository warehouseRepository;
+    private final UserRepository userRepository;
     private final AuditService auditService;
     private final Logger logger = LoggerFactory.getLogger(StockService.class);
 
     @Autowired
     public StockService(StockRepository stockRepository, ProductRepository productRepository,
-                        WarehouseRepository warehouseRepository, AuditService auditService) {
+                        WarehouseRepository warehouseRepository, UserRepository userRepository, AuditService auditService) {
         this.stockRepository = stockRepository;
         this.productRepository = productRepository;
         this.warehouseRepository = warehouseRepository;
+        this.userRepository = userRepository;
         this.auditService = auditService;
     }
 
@@ -106,10 +109,10 @@ public class StockService {
         Stock savedStock = stockRepository.save(stock);
 
         // Create audit log
-        auditService.createAuditLog(
-                userId,
-                product.getId(),
-                warehouse.getId(),
+        auditService.logAuditEvent(
+                userRepository.findById(userId).get(),
+                product,
+                warehouse,
                 null,
                 "ADD",
                 createRequest.getQuantity()
@@ -167,10 +170,10 @@ public class StockService {
         Stock updatedStock = stockRepository.save(stock);
 
         // Create audit log
-        auditService.createAuditLog(
-                userId,
-                product.getId(),
-                warehouse.getId(),
+        auditService.logAuditEvent(
+                userRepository.findById(userId).get(),
+                product,
+                warehouse,
                 null,
                 updateRequest.isAddition() ? "ADD" : "REMOVE",
                 updateRequest.getQuantity()
@@ -226,11 +229,11 @@ public class StockService {
         stockRepository.save(targetStock);
 
         // Create audit log
-        auditService.createAuditLog(
-                userId,
-                product.getId(),
-                sourceWarehouse.getId(),
-                targetWarehouse.getId(),
+        auditService.logAuditEvent(
+                userRepository.findById(userId).get(),
+                product,
+                sourceWarehouse,
+                targetWarehouse,
                 "TRANSFER",
                 transferRequest.getQuantity()
         );

@@ -4,30 +4,20 @@ import java.time.LocalDateTime;
 
 public class AuditResponseDTO {
     private Long id;
+    private Long userId;
     private String username;
-    private String userRole;
     private String action;
+    private Long productId;
     private String productName;
+    private Long warehouseId;
     private String warehouseName;
+    private Long targetWarehouseId;
     private String targetWarehouseName;
     private Integer quantity;
     private LocalDateTime timestamp;
 
-    // Constructors
+    // Default constructor
     public AuditResponseDTO() {
-    }
-
-    public AuditResponseDTO(Long id, String username, String userRole, String action, String productName,
-                            String warehouseName, String targetWarehouseName, Integer quantity, LocalDateTime timestamp) {
-        this.id = id;
-        this.username = username;
-        this.userRole = userRole;
-        this.action = action;
-        this.productName = productName;
-        this.warehouseName = warehouseName;
-        this.targetWarehouseName = targetWarehouseName;
-        this.quantity = quantity;
-        this.timestamp = timestamp;
     }
 
     // Getters and setters
@@ -39,20 +29,20 @@ public class AuditResponseDTO {
         this.id = id;
     }
 
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
     public String getUsername() {
         return username;
     }
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public String getUserRole() {
-        return userRole;
-    }
-
-    public void setUserRole(String userRole) {
-        this.userRole = userRole;
     }
 
     public String getAction() {
@@ -63,6 +53,14 @@ public class AuditResponseDTO {
         this.action = action;
     }
 
+    public Long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
+    }
+
     public String getProductName() {
         return productName;
     }
@@ -71,12 +69,28 @@ public class AuditResponseDTO {
         this.productName = productName;
     }
 
+    public Long getWarehouseId() {
+        return warehouseId;
+    }
+
+    public void setWarehouseId(Long warehouseId) {
+        this.warehouseId = warehouseId;
+    }
+
     public String getWarehouseName() {
         return warehouseName;
     }
 
     public void setWarehouseName(String warehouseName) {
         this.warehouseName = warehouseName;
+    }
+
+    public Long getTargetWarehouseId() {
+        return targetWarehouseId;
+    }
+
+    public void setTargetWarehouseId(Long targetWarehouseId) {
+        this.targetWarehouseId = targetWarehouseId;
     }
 
     public String getTargetWarehouseName() {
@@ -101,20 +115,5 @@ public class AuditResponseDTO {
 
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
-    }
-
-    @Override
-    public String toString() {
-        return "AuditResponseDTO{" +
-                "id=" + id +
-                ", username='" + username + '\'' +
-                ", userRole='" + userRole + '\'' +
-                ", action='" + action + '\'' +
-                ", productName='" + productName + '\'' +
-                ", warehouseName='" + warehouseName + '\'' +
-                ", targetWarehouseName='" + targetWarehouseName + '\'' +
-                ", quantity=" + quantity +
-                ", timestamp=" + timestamp +
-                '}';
     }
 }

@@ -1,19 +1,11 @@
 package ch.hoffmann.jan.warehouse.service;
 
-import ch.hoffmann.jan.warehouse.dto.audit.AuditFilterDTO;
 import ch.hoffmann.jan.warehouse.dto.audit.AuditResponseDTO;
-import ch.hoffmann.jan.warehouse.exception.WarehouseException;
 import ch.hoffmann.jan.warehouse.model.Audit;
-import ch.hoffmann.jan.warehouse.model.AuditAction;
 import ch.hoffmann.jan.warehouse.model.Product;
 import ch.hoffmann.jan.warehouse.model.User;
 import ch.hoffmann.jan.warehouse.model.Warehouse;
 import ch.hoffmann.jan.warehouse.repository.AuditRepository;
-import ch.hoffmann.jan.warehouse.repository.ProductRepository;
-import ch.hoffmann.jan.warehouse.repository.UserRepository;
-import ch.hoffmann.jan.warehouse.repository.WarehouseRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -29,70 +21,18 @@ import java.util.stream.Collectors;
 public class AuditService {
 
     private final AuditRepository auditRepository;
-    private final UserRepository userRepository;
-    private final ProductRepository productRepository;
-    private final WarehouseRepository warehouseRepository;
-    private final Logger logger = LoggerFactory.getLogger(AuditService.class);
 
     @Autowired
-    public AuditService(AuditRepository auditRepository, UserRepository userRepository,
-                        ProductRepository productRepository, WarehouseRepository warehouseRepository) {
+    public AuditService(AuditRepository auditRepository) {
         this.auditRepository = auditRepository;
-        this.userRepository = userRepository;
-        this.productRepository = productRepository;
-        this.warehouseRepository = warehouseRepository;
     }
 
-    @Transactional(readOnly = true)
-    public Page<AuditResponseDTO> getAuditLogs(AuditFilterDTO filterDTO) {
-        Pageable pageable = PageRequest.of(filterDTO.getPage(), filterDTO.getSize());
-
-        // Validate action if provided
-        if (filterDTO.getAction() != null && !filterDTO.getAction().isEmpty() && !AuditAction.isValid(filterDTO.getAction())) {
-            throw new WarehouseException.InvalidAuditActionException(filterDTO.getAction());
-        }
-
-        Page<Audit> auditPage = auditRepository.findByFilters(
-                filterDTO.getUserId(),
-                filterDTO.getProductId(),
-                filterDTO.getWarehouseId(),
-                filterDTO.getAction(),
-                filterDTO.getStartDate(),
-                filterDTO.getEndDate(),
-                pageable);
-
-        return auditPage.map(this::convertToResponseDTO);
-    }
-
-    @Transactional(readOnly = true)
-    public List<AuditResponseDTO> getRecentAuditLogs() {
-        return auditRepository.findTop10ByOrderByTimestampDesc().stream()
-                .map(this::convertToResponseDTO)
-                .collect(Collectors.toList());
-    }
-
+    /**
+     * Creates and saves an audit log entry
+     */
     @Transactional
-    public AuditResponseDTO createAuditLog(Long userId, Long productId, Long warehouseId, Long targetWarehouseId, String action, Integer quantity) {
-        // Validate action
-        if (!AuditAction.isValid(action)) {
-            throw new WarehouseException.InvalidAuditActionException(action);
-        }
-
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new WarehouseException.ResourceNotFoundException("User", "id", userId));
-
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new WarehouseException.ResourceNotFoundException("Product", "id", productId));
-
-        Warehouse warehouse = warehouseRepository.findById(warehouseId)
-                .orElseThrow(() -> new WarehouseException.ResourceNotFoundException("Warehouse", "id", warehouseId));
-
-        Warehouse targetWarehouse = null;
-        if (targetWarehouseId != null) {
-            targetWarehouse = warehouseRepository.findById(targetWarehouseId)
-                    .orElseThrow(() -> new WarehouseException.ResourceNotFoundException("Target Warehouse", "id", targetWarehouseId));
-        }
-
+    public void logAuditEvent(User user, Product product, Warehouse warehouse,
+                              Warehouse targetWarehouse, String action, Integer quantity) {
         Audit audit = new Audit();
         audit.setUser(user);
         audit.setProduct(product);
@@ -102,33 +42,66 @@ public class AuditService {
         audit.setQuantity(quantity);
         audit.setTimestamp(LocalDateTime.now());
 
-        Audit savedAudit = auditRepository.save(audit);
-
-        logger.info("Created audit log: User {} {} {} units of product {} in warehouse {}{}",
-                user.getUsername(),
-                action.toLowerCase(),
-                quantity,
-                product.getName(),
-                warehouse.getName(),
-                targetWarehouse != null ? " to warehouse " + targetWarehouse.getName() : "");
-
-        return convertToResponseDTO(savedAudit);
+        auditRepository.save(audit);
     }
 
     /**
-     * Converts an Audit entity to an AuditResponseDTO
+     * Saves a pre-constructed Audit object
      */
+    @Transactional
+    public void saveAudit(Audit audit) {
+        auditRepository.save(audit);
+    }
+
+    // Simplified method to get paginated audit logs
+    @Transactional(readOnly = true)
+    public Page<AuditResponseDTO> getAuditLogs(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return auditRepository.findAllByOrderByTimestampDesc(pageable)
+                .map(this::convertToResponseDTO);
+    }
+
+    // Method for recent logs
+    @Transactional(readOnly = true)
+    public List<AuditResponseDTO> getRecentAuditLogs() {
+        return auditRepository.findTop10ByOrderByTimestampDesc()
+                .stream()
+                .map(this::convertToResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Conversion method
     private AuditResponseDTO convertToResponseDTO(Audit audit) {
         AuditResponseDTO dto = new AuditResponseDTO();
         dto.setId(audit.getId());
-        dto.setUsername(audit.getUser().getUsername());
-        dto.setUserRole(audit.getUser().getRole());
         dto.setAction(audit.getAction());
-        dto.setProductName(audit.getProduct().getName());
-        dto.setWarehouseName(audit.getWarehouse().getName());
-        dto.setTargetWarehouseName(audit.getTargetWarehouse() != null ? audit.getTargetWarehouse().getName() : null);
         dto.setQuantity(audit.getQuantity());
         dto.setTimestamp(audit.getTimestamp());
+
+        // User information
+        if (audit.getUser() != null) {
+            dto.setUserId(audit.getUser().getId());
+            dto.setUsername(audit.getUser().getUsername());
+        }
+
+        // Product information
+        if (audit.getProduct() != null) {
+            dto.setProductId(audit.getProduct().getId());
+            dto.setProductName(audit.getProduct().getName());
+        }
+
+        // Warehouse information
+        if (audit.getWarehouse() != null) {
+            dto.setWarehouseId(audit.getWarehouse().getId());
+            dto.setWarehouseName(audit.getWarehouse().getName());
+        }
+
+        // Target warehouse information (for transfers)
+        if (audit.getTargetWarehouse() != null) {
+            dto.setTargetWarehouseId(audit.getTargetWarehouse().getId());
+            dto.setTargetWarehouseName(audit.getTargetWarehouse().getName());
+        }
+
         return dto;
     }
 }
