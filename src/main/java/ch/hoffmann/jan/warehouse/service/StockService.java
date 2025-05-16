@@ -149,6 +149,12 @@ public class StockService {
                             product.getName(), warehouse.getName(), updateRequest.getQuantity(), stock.getQuantity());
                 }
                 stock.setQuantity(stock.getQuantity() - updateRequest.getQuantity());
+                if (stock.getQuantity() == 0) {
+                    stockRepository.delete(stock);
+                    logger.info("Deleted stock of product {} in warehouse {} as quantity reached 0",
+                            product.getName(), warehouse.getName());
+                    return null;
+                }
                 logger.info("Removed {} units from stock of product {} in warehouse {}",
                         updateRequest.getQuantity(), product.getName(), warehouse.getName());
             }
@@ -210,7 +216,13 @@ public class StockService {
 
         // Reduce source stock
         sourceStock.setQuantity(sourceStock.getQuantity() - transferRequest.getQuantity());
-        stockRepository.save(sourceStock);
+        if (sourceStock.getQuantity() == 0) {
+            stockRepository.delete(sourceStock);
+            logger.info("Deleted stock of product {} in warehouse {} as quantity reached 0 after transfer",
+                    product.getName(), sourceWarehouse.getName());
+        } else {
+            stockRepository.save(sourceStock);
+        }
 
         // Increase target stock
         Optional<Stock> targetStockOptional = stockRepository.findByProductAndWarehouse(product, targetWarehouse);

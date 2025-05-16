@@ -38,8 +38,12 @@ A Java Spring Boot application for managing warehouse inventory across multiple 
 ### User Controller
 - `GET /api/users` - Get all users (Manager only)
 - `GET /api/users/{id}` - Get user by ID (Manager only)
+- `GET /api/users/me` - Get current user
 - `POST /api/users/register` - Register a new user
-- `PUT /api/users/{id}` - Update user (Manager only)
+- `PATCH /api/users/{id}` - Update user (Manager only)
+- `PATCH /api/users/me` - Update current user
+- `PUT /api/users/{id}/promote` - Promote user to manager (Manager only)
+- `PUT /api/users/{id}/demote` - Demote user to employee (Manager only)
 - `DELETE /api/users/{id}` - Delete user (Manager only)
 
 ### Category Controller
@@ -69,8 +73,9 @@ A Java Spring Boot application for managing warehouse inventory across multiple 
 - `GET /api/stocks/product/{productId}` - Get stocks by product
 - `GET /api/stocks/warehouse/{warehouseId}` - Get stocks by warehouse
 - `GET /api/stocks/product/{productId}/warehouse/{warehouseId}` - Get stock by product and warehouse
-- `PUT /api/stocks/update` - Update stock (Manager only)
-- `PUT /api/stocks/transfer` - Transfer stock from one warehouse to another (Manager only)
+- `POST /api/stocks` - Create stock (Manager only)
+- `PUT /api/stocks` - Update stock (Manager only)
+- `POST /api/stocks/transfer` - Transfer stock from one warehouse to another (Manager only)
 
 ### Audit Controller
 - `GET /api/audit` - Get all audit logs (Manager only)
