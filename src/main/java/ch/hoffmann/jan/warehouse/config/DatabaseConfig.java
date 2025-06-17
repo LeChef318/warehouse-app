@@ -18,11 +18,19 @@ import java.sql.Statement;
 @Configuration
 public class DatabaseConfig {
 
+    // Admin user for database creation and schema management
+    @Value("${spring.datasource.admin.username}")
+    private String adminUsername;
+
+    @Value("${spring.datasource.admin.password}")
+    private String adminPassword;
+
+    // Application user for CRUD operations
     @Value("${spring.datasource.username}")
-    private String username;
+    private String appUsername;
 
     @Value("${spring.datasource.password}")
-    private String password;
+    private String appPassword;
 
     @Bean
     @Primary
@@ -35,21 +43,35 @@ public class DatabaseConfig {
     @Primary
     @Order(1)
     public DataSource dataSource(DataSourceProperties properties) {
-        // First, ensure the warehouse database exists
-        ensureWarehouseDatabaseExists();
+        // First, ensure the warehouse database and application user exist
+        ensureWarehouseDatabaseAndUserSetup();
 
-        // Now create a datasource that points to the warehouse database
+        // Now create a datasource that points to the warehouse database using app user
         DriverManagerDataSource dataSource = new DriverManagerDataSource();
         dataSource.setUrl("jdbc:postgresql://localhost:5432/warehouse");
-        dataSource.setUsername(username);
-        dataSource.setPassword(password);
+        dataSource.setUsername(appUsername);
+        dataSource.setPassword(appPassword);
 
         return dataSource;
     }
 
-    private void ensureWarehouseDatabaseExists() {
+    /**
+     * Creates a DataSource with admin privileges for database creation
+     * This is used only during application startup for database initialization
+     */
+    @Bean("adminDataSource")
+    public DataSource adminDataSource() {
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setUrl("jdbc:postgresql://localhost:5432/warehouse");
+        dataSource.setUsername(adminUsername);
+        dataSource.setPassword(adminPassword);
+        return dataSource;
+    }
+
+    private void ensureWarehouseDatabaseAndUserSetup() {
+        // Step 1: Ensure database exists
         try (Connection connection = DriverManager.getConnection(
-                "jdbc:postgresql://localhost:5432/postgres", username, password)) {
+                "jdbc:postgresql://localhost:5432/postgres", adminUsername, adminPassword)) {
 
             boolean databaseExists = false;
 
@@ -62,15 +84,67 @@ public class DatabaseConfig {
                 if (!databaseExists) {
                     // Create the database if it doesn't exist
                     statement.executeUpdate("CREATE DATABASE warehouse");
-                    System.out.println("Database 'warehouse' created successfully.");
+                    System.out.println("Database 'warehouse' created successfully using admin user.");
                 } else {
                     System.out.println("Database 'warehouse' already exists.");
                 }
             }
         } catch (Exception e) {
-            System.err.println("Failed to initialize database: " + e.getMessage());
+            System.err.println("Failed to initialize database with admin user: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to initialize database", e);
+        }
+
+        // Step 2: Ensure application user exists and has proper permissions
+        try (Connection connection = DriverManager.getConnection(
+                "jdbc:postgresql://localhost:5432/warehouse", adminUsername, adminPassword)) {
+
+            try (Statement statement = connection.createStatement()) {
+                
+                // Check if application user exists
+                ResultSet userExists = statement.executeQuery(
+                    "SELECT 1 FROM pg_user WHERE usename = '" + appUsername + "'");
+                
+                if (!userExists.next()) {
+                    // Create application user
+                    System.out.println("Creating application user: " + appUsername);
+                    statement.executeUpdate(
+                        "CREATE USER " + appUsername + " WITH PASSWORD '" + appPassword + "'");
+                    System.out.println("Application user created successfully.");
+                } else {
+                    System.out.println("Application user '" + appUsername + "' already exists.");
+                }
+
+                // Grant necessary permissions to application user
+                System.out.println("Setting up permissions for application user...");
+                
+                // Grant connect permission
+                statement.executeUpdate("GRANT CONNECT ON DATABASE warehouse TO " + appUsername);
+                
+                // Grant schema usage
+                statement.executeUpdate("GRANT USAGE ON SCHEMA public TO " + appUsername);
+                
+                // Grant table permissions for existing tables
+                statement.executeUpdate(
+                    "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO " + appUsername);
+                
+                // Grant sequence permissions (needed for auto-increment)
+                statement.executeUpdate(
+                    "GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO " + appUsername);
+                
+                // Grant permissions for future tables (important for schema updates)
+                statement.executeUpdate(
+                    "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO " + appUsername);
+                statement.executeUpdate(
+                    "ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO " + appUsername);
+                
+                System.out.println("Permissions configured for application user.");
+
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to setup application user: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to setup application user", e);
         }
     }
 }
